@@ -43,10 +43,16 @@ class CSVParserAdvanced(AsyncParser[str | bytes]):
     """A parser for CSV data."""
 
     def __init__(
-        self, config: IngestionConfig, llm_provider: CompletionProvider
+        self,
+        config: IngestionConfig,
+        database_provider: DatabaseProvider,
+        llm_provider: CompletionProvider,
+        ocr_provider=None,
+        **kwargs,
     ):
         self.llm_provider = llm_provider
         self.config = config
+        self.database_provider = database_provider
 
         import csv
         from io import StringIO
@@ -61,9 +67,16 @@ class CSVParserAdvanced(AsyncParser[str | bytes]):
         num_bytes = 65536
 
         if file:
+            if hasattr(file, 'getvalue'):
+                data = file.getvalue()[:num_bytes]
+                file.seek(0)
+                return sniffer.sniff(data, delimiters=",;").delimiter
             lines = file.readlines(num_bytes)
             file.seek(0)
-            data = "\n".join(ln.decode("utf-8") for ln in lines)
+            try:
+                data = "\n".join(ln.decode("utf-8") for ln in lines)
+            except (UnicodeDecodeError, AttributeError):
+                data = "\n".join(str(ln) for ln in lines)
         elif file_path is not None:
             with open(file_path) as f:
                 data = "\n".join(f.readlines(num_bytes))
@@ -86,13 +99,13 @@ class CSVParserAdvanced(AsyncParser[str | bytes]):
         csv_reader = self.csv.reader(self.StringIO(data), delimiter=delimiter)
 
         header = next(csv_reader)
-        num_cols = len(header.split(delimiter))
-        num_rows = num_col_times_num_rows // num_cols
+        num_cols = len(header)
+        num_rows = max(1, num_col_times_num_rows // num_cols)
 
         chunk_rows = []
         for row_num, row in enumerate(csv_reader):
             chunk_rows.append(row)
-            if row_num % num_rows == 0:
+            if row_num % num_rows == 0 and chunk_rows:
                 yield (
                     ", ".join(header)
                     + "\n"

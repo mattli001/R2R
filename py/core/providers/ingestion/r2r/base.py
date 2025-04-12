@@ -39,7 +39,7 @@ class R2RIngestionConfig(IngestionConfig):
 class R2RIngestionProvider(IngestionProvider):
     DEFAULT_PARSERS = {
         DocumentType.BMP: parsers.BMPParser,
-        DocumentType.CSV: parsers.CSVParser,
+        DocumentType.CSV: parsers.CSVParserAdvanced,
         DocumentType.DOC: parsers.DOCParser,
         DocumentType.DOCX: parsers.DOCXParser,
         DocumentType.EML: parsers.EMLParser,
