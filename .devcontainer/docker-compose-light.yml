@@ -1,0 +1,66 @@
+networks:
+  edge-rag-network:
+    name: edge-rag-network
+
+services:
+  r2r-light.local:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    environment:
+      - TZ=Asia/Taipei
+    volumes:
+      - ..:/app:cached
+      - r2r-dev-command-history-volume:/home/vscode/.history/
+    command: sleep infinity
+    ports:
+      - 7272:7272
+    networks:
+      - edge-rag-network
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    env_file:
+      - ../docker/env/postgres.env
+    volumes:
+      - r2r-dev-postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - edge-rag-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: on-failure
+    command: >
+      postgres
+      -c max_connections=1024
+
+  graph_clustering:
+    image: ragtoriches/cluster-prod
+    ports:
+      - "7276:7276"
+    networks:
+      - edge-rag-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7276/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  r2r-dashboard:
+    image: sciphiai/r2r-dashboard:1.0.3
+    env_file:
+      - ../docker/env/r2r-dashboard.env
+    ports:
+      - "7273:3000"
+    networks:
+      - edge-rag-network
+    restart: on-failure
+
+volumes:
+  r2r-dev-command-history-volume:
+  r2r-dev-postgres_data:
+    name: r2r-dev-postgres_data

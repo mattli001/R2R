@@ -1,0 +1,47 @@
+{
+  "name": "r2r-light devcontainer",
+  "dockerComposeFile": [
+    "./docker-compose-light.yml"
+  ],
+  "service": "r2r-light.local",
+  "workspaceFolder": "/app",
+  "features": {
+    // ref: https://github.com/devcontainers/features
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "timonwong.shellcheck",
+        "eamodio.gitlens",
+        "yzhang.markdown-all-in-one",
+        "bierner.markdown-mermaid",
+        "davidanson.vscode-markdownlint",
+        "alexkrechik.cucumberautocomplete",
+        "earthly.earthfile-syntax-highlighting",
+        "esbenp.prettier-vscode",
+        "timonwong.shellcheck",
+        "mgesbert.indent-nested-dictionary"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "remote.localPortHost": "allInterfaces"
+      }
+    }
+  },
+  "remoteUser": "vscode",
+  "postStartCommand": "/app/.devcontainer/post_start_command.sh",
+  "postCreateCommand": "/app/.devcontainer/post_create_command.sh",
+  "forwardPorts": [
+    7272
+  ],
+  "portsAttributes": {
+    "7272": {
+      "label": "R2R Server port"
+    }
+  },
+  "shutdownAction": "stopCompose"
+}
